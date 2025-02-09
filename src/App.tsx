@@ -1,5 +1,6 @@
 import React from 'react'
 import TeamDashboard from './components/TeamDashboard'
+import './App.css'
 
 function App() {
   return (
@@ -9,4 +10,4 @@ function App() {
   )
 }
 
-export default App 
+export default App
