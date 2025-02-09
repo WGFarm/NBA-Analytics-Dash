@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@tremor/react"],
+  optimizeFonts: true,
 }
 
 module.exports = nextConfig 
