@@ -23,7 +23,17 @@ interface TooltipData {
 interface EnhancedTooltipData extends TooltipData {
   difference: number;
   total: number;
-  leagueAverage?: number;
+  leagueAverage: number;
+  historicalAvg: number;
+  lastGame: {
+    warriors: number;
+    lakers: number;
+  };
+  trend: {
+    warriors: 'up' | 'down' | 'stable';
+    lakers: 'up' | 'down' | 'stable';
+  };
+  seasonHigh: number;
 }
 
 export default function CustomRadarChart({ data }: RadarChartProps) {
@@ -70,8 +80,19 @@ export default function CustomRadarChart({ data }: RadarChartProps) {
   const calculateTooltipData = (category: string, warriors: number, lakers: number): EnhancedTooltipData => {
     const difference = warriors - lakers;
     const total = warriors + lakers;
-    // You could fetch this from a prop or calculate it
-    const leagueAverage = 50; 
+    
+    // Example data - replace with real data
+    const leagueAverage = 50;
+    const historicalAvg = 48;
+    const lastGame = {
+      warriors: warriors - 2,
+      lakers: lakers + 1
+    };
+    
+    const trend = {
+      warriors: warriors > lastGame.warriors ? 'up' : warriors < lastGame.warriors ? 'down' : 'stable',
+      lakers: lakers > lastGame.lakers ? 'up' : lakers < lastGame.lakers ? 'down' : 'stable'
+    };
 
     return {
       x: 0,
@@ -81,7 +102,11 @@ export default function CustomRadarChart({ data }: RadarChartProps) {
       lakers,
       difference,
       total,
-      leagueAverage
+      leagueAverage,
+      historicalAvg,
+      lastGame,
+      trend,
+      seasonHigh: Math.max(warriors, lakers)
     };
   };
 
@@ -217,17 +242,16 @@ export default function CustomRadarChart({ data }: RadarChartProps) {
             transform={`translate(${tooltipData.x + 10}, ${tooltipData.y - 10})`}
             className="tooltip-container"
           >
-            {/* Tooltip Background */}
+            {/* Increase height for more content */}
             <rect
               x="0"
               y="0"
-              width="160"
-              height="120"
+              width="180"
+              height="200"
               rx="6"
               className="fill-white dark:fill-gray-800 opacity-95 shadow-lg"
             />
             
-            {/* Tooltip Content */}
             <g className="tooltip-content">
               {/* Category Header */}
               <text 
@@ -238,54 +262,100 @@ export default function CustomRadarChart({ data }: RadarChartProps) {
                 {tooltipData.category}
               </text>
 
-              {/* Team Values */}
+              {/* Team Values with Trend Indicators */}
               <g transform="translate(10, 35)">
                 {/* Warriors */}
                 <rect width="15" height="15" fill="rgb(59, 130, 246)" />
                 <text x="25" y="12" className="text-xs fill-gray-700 dark:fill-gray-300">
                   Warriors: {tooltipData.warriors}%
+                  {tooltipData.trend.warriors === 'up' && ' ↑'}
+                  {tooltipData.trend.warriors === 'down' && ' ↓'}
+                </text>
+                <text x="120" y="12" className="text-xs fill-gray-500 dark:fill-gray-400">
+                  ({tooltipData.lastGame.warriors}%)
                 </text>
 
                 {/* Lakers */}
                 <rect y="20" width="15" height="15" fill="rgb(239, 68, 68)" />
                 <text x="25" y="32" className="text-xs fill-gray-700 dark:fill-gray-300">
                   Lakers: {tooltipData.lakers}%
+                  {tooltipData.trend.lakers === 'up' && ' ↑'}
+                  {tooltipData.trend.lakers === 'down' && ' ↓'}
+                </text>
+                <text x="120" y="32" className="text-xs fill-gray-500 dark:fill-gray-400">
+                  ({tooltipData.lastGame.lakers}%)
                 </text>
               </g>
 
-              {/* Comparison Stats */}
+              {/* Divider */}
               <line 
                 x1="10" 
-                y1="75" 
-                x2="150" 
-                y2="75" 
+                y1="65" 
+                x2="170" 
+                y2="65" 
                 className="stroke-gray-200 dark:stroke-gray-700" 
                 strokeWidth="1"
               />
-              
-              {/* Difference */}
-              <text x="10" y="90" className="text-xs fill-gray-600 dark:fill-gray-400">
-                Difference: 
-                <tspan 
-                  className={tooltipData.difference > 0 ? 'fill-emerald-500' : 'fill-red-500'}
-                >
-                  {' '}{tooltipData.difference > 0 ? '+' : ''}{tooltipData.difference}%
-                </tspan>
-              </text>
 
-              {/* League Average Comparison */}
-              <text x="10" y="105" className="text-xs fill-gray-600 dark:fill-gray-400">
-                vs. League Avg: 
-                <tspan 
-                  className={
-                    Math.max(tooltipData.warriors, tooltipData.lakers) > tooltipData.leagueAverage! 
+              {/* Statistical Comparisons */}
+              <g transform="translate(10, 80)">
+                {/* Direct Comparison */}
+                <text className="text-xs fill-gray-600 dark:fill-gray-400">
+                  Difference: 
+                  <tspan className={tooltipData.difference > 0 ? 'fill-emerald-500' : 'fill-red-500'}>
+                    {' '}{tooltipData.difference > 0 ? '+' : ''}{tooltipData.difference}%
+                  </tspan>
+                </text>
+
+                {/* League Average */}
+                <text y="20" className="text-xs fill-gray-600 dark:fill-gray-400">
+                  vs League Avg: 
+                  <tspan className={
+                    Math.max(tooltipData.warriors, tooltipData.lakers) > tooltipData.leagueAverage
                       ? 'fill-emerald-500' 
                       : 'fill-red-500'
-                  }
-                >
-                  {' '}{Math.max(tooltipData.warriors, tooltipData.lakers) - tooltipData.leagueAverage!}%
-                </tspan>
-              </text>
+                  }>
+                    {' '}{Math.max(tooltipData.warriors, tooltipData.lakers) - tooltipData.leagueAverage}%
+                  </tspan>
+                </text>
+
+                {/* Historical Average */}
+                <text y="40" className="text-xs fill-gray-600 dark:fill-gray-400">
+                  vs Historical: 
+                  <tspan className={
+                    Math.max(tooltipData.warriors, tooltipData.lakers) > tooltipData.historicalAvg
+                      ? 'fill-emerald-500' 
+                      : 'fill-red-500'
+                  }>
+                    {' '}{Math.max(tooltipData.warriors, tooltipData.lakers) - tooltipData.historicalAvg}%
+                  </tspan>
+                </text>
+
+                {/* Game-to-Game Change */}
+                <text y="60" className="text-xs fill-gray-600 dark:fill-gray-400">
+                  Warriors Change: 
+                  <tspan className={tooltipData.warriors - tooltipData.lastGame.warriors > 0 ? 'fill-emerald-500' : 'fill-red-500'}>
+                    {' '}{tooltipData.warriors - tooltipData.lastGame.warriors > 0 ? '+' : ''}
+                    {tooltipData.warriors - tooltipData.lastGame.warriors}%
+                  </tspan>
+                </text>
+
+                <text y="80" className="text-xs fill-gray-600 dark:fill-gray-400">
+                  Lakers Change: 
+                  <tspan className={tooltipData.lakers - tooltipData.lastGame.lakers > 0 ? 'fill-emerald-500' : 'fill-red-500'}>
+                    {' '}{tooltipData.lakers - tooltipData.lastGame.lakers > 0 ? '+' : ''}
+                    {tooltipData.lakers - tooltipData.lastGame.lakers}%
+                  </tspan>
+                </text>
+
+                {/* Season High */}
+                <text y="100" className="text-xs fill-gray-600 dark:fill-gray-400">
+                  Season High: 
+                  <tspan className="fill-blue-500">
+                    {' '}{tooltipData.seasonHigh}%
+                  </tspan>
+                </text>
+              </g>
             </g>
           </g>
         )}
