@@ -22,6 +22,7 @@ import {
 } from "@tremor/react";
 import { useState } from 'react';
 import StatTooltip from './StatTooltip';
+import PlayerDetailDashboard from './PlayerDetailDashboard';
 
 interface PlayerStats {
   name: string;
@@ -119,6 +120,7 @@ export default function PlayerDashboard() {
   const [selectedTeam, setSelectedTeam] = useState<string>("Warriors");
   const [sortField, setSortField] = useState<keyof PlayerStats>("minutes");
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
 
   // Example player data
   const warriorsPlayers: PlayerStats[] = [
@@ -198,364 +200,393 @@ export default function PlayerDashboard() {
     }
   };
 
+  const handlePlayerClick = (player: PlayerStats) => {
+    setSelectedPlayer(player);
+  };
+
   return (
     <Card className="dark:bg-gray-800">
-      <div className="flex justify-between items-center mb-4">
-        <Title>Player Advanced Metrics</Title>
-        <Select
-          value={selectedTeam}
-          onValueChange={setSelectedTeam}
-          className="w-40"
-        >
-          <SelectItem value="Warriors">Warriors</SelectItem>
-          <SelectItem value="Lakers">Lakers</SelectItem>
-        </Select>
-      </div>
+      {selectedPlayer ? (
+        <PlayerDetailDashboard 
+          player={selectedPlayer}
+          onBack={() => setSelectedPlayer(null)}
+        />
+      ) : (
+        <>
+          <div className="flex justify-between items-center mb-4">
+            <Title>Player Advanced Metrics</Title>
+            <Select
+              value={selectedTeam}
+              onValueChange={setSelectedTeam}
+              className="w-40"
+            >
+              <SelectItem value="Warriors">Warriors</SelectItem>
+              <SelectItem value="Lakers">Lakers</SelectItem>
+            </Select>
+          </div>
 
-      <TabGroup>
-        <TabList>
-          <Tab>Traditional Stats</Tab>
-          <Tab>Shooting</Tab>
-          <Tab>Advanced Metrics</Tab>
-          <Tab>Impact Stats</Tab>
-        </TabList>
+          <TabGroup>
+            <TabList>
+              <Tab>Traditional Stats</Tab>
+              <Tab>Shooting</Tab>
+              <Tab>Advanced Metrics</Tab>
+              <Tab>Impact Stats</Tab>
+            </TabList>
 
-        <TabPanels>
-          <TabPanel>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>Player</TableHeaderCell>
-                  <TableHeaderCell>
-                    Pos
-                    <StatTooltip explanation="Player's primary position" />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('minutes')}
-                  >
-                    MIN
-                    <StatTooltip 
-                      metric="Minutes"
-                      explanation={statExplanations.traditional.minutes} 
-                    />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('points')}
-                  >
-                    PTS
-                    <StatTooltip 
-                      metric="Points"
-                      explanation={statExplanations.traditional.points} 
-                    />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('rebounds')}
-                  >
-                    REB
-                    <StatTooltip explanation={statExplanations.traditional.rebounds} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('assists')}
-                  >
-                    AST
-                    <StatTooltip explanation={statExplanations.traditional.assists} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('steals')}
-                  >
-                    STL
-                    <StatTooltip explanation={statExplanations.traditional.steals} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('blocks')}
-                  >
-                    BLK
-                    <StatTooltip explanation={statExplanations.traditional.blocks} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('turnovers')}
-                  >
-                    TO
-                    <StatTooltip explanation={statExplanations.traditional.turnovers} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('plusMinus')}
-                  >
-                    +/-
-                    <StatTooltip explanation={statExplanations.traditional.plusMinus} />
-                  </TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedPlayers.map((player) => (
-                  <TableRow key={player.name}>
-                    <TableCell>{player.name}</TableCell>
-                    <TableCell>{player.position}</TableCell>
-                    <TableCell>{player.minutes}</TableCell>
-                    <TableCell>{player.points}</TableCell>
-                    <TableCell>{player.rebounds}</TableCell>
-                    <TableCell>{player.assists}</TableCell>
-                    <TableCell>{player.steals}</TableCell>
-                    <TableCell>{player.blocks}</TableCell>
-                    <TableCell>{player.turnovers}</TableCell>
-                    <TableCell>
-                      <Badge color={player.plusMinus > 0 ? "emerald" : "red"}>
-                        {player.plusMinus > 0 ? '+' : ''}{player.plusMinus}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TabPanel>
-
-          <TabPanel>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>Player</TableHeaderCell>
-                  <TableHeaderCell>
-                    FGM
-                    <StatTooltip explanation={statExplanations.shooting.fgm} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    FGA
-                    <StatTooltip explanation={statExplanations.shooting.fga} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('effectiveFgPct')}
-                  >
-                    eFG%
-                    <StatTooltip explanation={statExplanations.shooting.efg} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    3PM
-                    <StatTooltip explanation={statExplanations.shooting.threePm} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    3PA
-                    <StatTooltip explanation={statExplanations.shooting.threePa} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    3P%
-                    <StatTooltip explanation={statExplanations.shooting.threePct} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    FTM
-                    <StatTooltip explanation={statExplanations.shooting.ftm} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    FTA
-                    <StatTooltip explanation={statExplanations.shooting.fta} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('trueShootingPct')}
-                  >
-                    TS%
-                    <StatTooltip explanation={statExplanations.shooting.ts} />
-                  </TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedPlayers.map((player) => (
-                  <TableRow key={player.name}>
-                    <TableCell>{player.name}</TableCell>
-                    <TableCell>{player.fgm}</TableCell>
-                    <TableCell>{player.fga}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        color={player.effectiveFgPct >= 55 ? "emerald" : "gray"}
-                        tooltip={getEfficiencyContext(player.effectiveFgPct, 'efg')}
+            <TabPanels>
+              <TabPanel>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Player</TableHeaderCell>
+                      <TableHeaderCell>
+                        Pos
+                        <StatTooltip explanation="Player's primary position" />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('minutes')}
                       >
-                        {player.effectiveFgPct.toFixed(1)}%
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{player.threePm}</TableCell>
-                    <TableCell>{player.threePa}</TableCell>
-                    <TableCell>
-                      {((player.threePm / player.threePa) * 100).toFixed(1)}%
-                    </TableCell>
-                    <TableCell>{player.ftm}</TableCell>
-                    <TableCell>{player.fta}</TableCell>
-                    <TableCell>
-                      <Badge color={player.trueShootingPct >= 60 ? "emerald" : "gray"}>
-                        {player.trueShootingPct.toFixed(1)}%
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TabPanel>
-
-          <TabPanel>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>Player</TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('usageRate')}
-                  >
-                    USG%
-                    <StatTooltip 
-                      metric="Usage Rate"
-                      explanation={statExplanations.advanced.usg} 
-                    />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('assistPct')}
-                  >
-                    AST%
-                    <StatTooltip explanation={statExplanations.advanced.astPct} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('reboundPct')}
-                  >
-                    REB%
-                    <StatTooltip explanation={statExplanations.advanced.rebPct} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('trueShootingPct')}
-                  >
-                    TS%
-                    <StatTooltip explanation={statExplanations.advanced.tsPct} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('effectiveFgPct')}
-                  >
-                    eFG%
-                    <StatTooltip explanation={statExplanations.advanced.efgPct} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    AST/TO
-                    <StatTooltip explanation={statExplanations.advanced.astToRatio} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    PTS/Poss
-                    <StatTooltip explanation={statExplanations.advanced.ptsPerPoss} />
-                  </TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedPlayers.map((player) => (
-                  <TableRow key={player.name}>
-                    <TableCell>{player.name}</TableCell>
-                    <TableCell>
-                      <Badge color={player.usageRate >= 25 ? "blue" : "gray"}>
-                        {player.usageRate.toFixed(1)}%
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{player.assistPct.toFixed(1)}%</TableCell>
-                    <TableCell>{player.reboundPct.toFixed(1)}%</TableCell>
-                    <TableCell>{player.trueShootingPct.toFixed(1)}%</TableCell>
-                    <TableCell>{player.effectiveFgPct.toFixed(1)}%</TableCell>
-                    <TableCell>
-                      {(player.assists / Math.max(player.turnovers, 1)).toFixed(1)}
-                    </TableCell>
-                    <TableCell>
-                      {(player.points / (player.fga + 0.44 * player.fta)).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TabPanel>
-
-          <TabPanel>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>Player</TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('offensiveRating')}
-                  >
-                    Off Rtg
-                    <StatTooltip 
-                      metric="Offensive Rating"
-                      explanation={statExplanations.impact.offRtg} 
-                    />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('defensiveRating')}
-                  >
-                    Def Rtg
-                    <StatTooltip explanation={statExplanations.impact.defRtg} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    Net Rtg
-                    <StatTooltip explanation={statExplanations.impact.netRtg} />
-                  </TableHeaderCell>
-                  <TableHeaderCell 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('plusMinus')}
-                  >
-                    +/-
-                    <StatTooltip explanation={statExplanations.impact.plusMinus} />
-                  </TableHeaderCell>
-                  <TableHeaderCell>
-                    Floor Impact
-                    <StatTooltip explanation={statExplanations.impact.floorImpact} />
-                  </TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedPlayers.map((player) => (
-                  <TableRow key={player.name}>
-                    <TableCell>{player.name}</TableCell>
-                    <TableCell>
-                      <Badge color={player.offensiveRating >= 110 ? "emerald" : "gray"}>
-                        {player.offensiveRating.toFixed(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge color={player.defensiveRating <= 105 ? "emerald" : "gray"}>
-                        {player.defensiveRating.toFixed(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        color={(player.offensiveRating - player.defensiveRating) > 0 ? "emerald" : "red"}
+                        MIN
+                        <StatTooltip 
+                          metric="Minutes"
+                          explanation={statExplanations.traditional.minutes} 
+                        />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('points')}
                       >
-                        {(player.offensiveRating - player.defensiveRating).toFixed(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge color={player.plusMinus > 0 ? "emerald" : "red"}>
-                        {player.plusMinus > 0 ? '+' : ''}{player.plusMinus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <ProgressBar
-                        value={(player.offensiveRating - 100) / 30}
-                        color={player.offensiveRating >= 110 ? "emerald" : "gray"}
-                        tooltip={`Impact Score: ${((player.offensiveRating - 100) / 30 * 100).toFixed(1)}
-                          ${getRatingContext(player.offensiveRating, 'offensive')}`}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
+                        PTS
+                        <StatTooltip 
+                          metric="Points"
+                          explanation={statExplanations.traditional.points} 
+                        />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('rebounds')}
+                      >
+                        REB
+                        <StatTooltip explanation={statExplanations.traditional.rebounds} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('assists')}
+                      >
+                        AST
+                        <StatTooltip explanation={statExplanations.traditional.assists} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('steals')}
+                      >
+                        STL
+                        <StatTooltip explanation={statExplanations.traditional.steals} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('blocks')}
+                      >
+                        BLK
+                        <StatTooltip explanation={statExplanations.traditional.blocks} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('turnovers')}
+                      >
+                        TO
+                        <StatTooltip explanation={statExplanations.traditional.turnovers} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('plusMinus')}
+                      >
+                        +/-
+                        <StatTooltip explanation={statExplanations.traditional.plusMinus} />
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortedPlayers.map((player) => (
+                      <TableRow 
+                        key={player.name}
+                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                        onClick={() => handlePlayerClick(player)}
+                      >
+                        <TableCell>{player.name}</TableCell>
+                        <TableCell>{player.position}</TableCell>
+                        <TableCell>{player.minutes}</TableCell>
+                        <TableCell>{player.points}</TableCell>
+                        <TableCell>{player.rebounds}</TableCell>
+                        <TableCell>{player.assists}</TableCell>
+                        <TableCell>{player.steals}</TableCell>
+                        <TableCell>{player.blocks}</TableCell>
+                        <TableCell>{player.turnovers}</TableCell>
+                        <TableCell>
+                          <Badge color={player.plusMinus > 0 ? "emerald" : "red"}>
+                            {player.plusMinus > 0 ? '+' : ''}{player.plusMinus}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabPanel>
+
+              <TabPanel>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Player</TableHeaderCell>
+                      <TableHeaderCell>
+                        FGM
+                        <StatTooltip explanation={statExplanations.shooting.fgm} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        FGA
+                        <StatTooltip explanation={statExplanations.shooting.fga} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('effectiveFgPct')}
+                      >
+                        eFG%
+                        <StatTooltip explanation={statExplanations.shooting.efg} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        3PM
+                        <StatTooltip explanation={statExplanations.shooting.threePm} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        3PA
+                        <StatTooltip explanation={statExplanations.shooting.threePa} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        3P%
+                        <StatTooltip explanation={statExplanations.shooting.threePct} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        FTM
+                        <StatTooltip explanation={statExplanations.shooting.ftm} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        FTA
+                        <StatTooltip explanation={statExplanations.shooting.fta} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('trueShootingPct')}
+                      >
+                        TS%
+                        <StatTooltip explanation={statExplanations.shooting.ts} />
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortedPlayers.map((player) => (
+                      <TableRow 
+                        key={player.name}
+                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                        onClick={() => handlePlayerClick(player)}
+                      >
+                        <TableCell>{player.name}</TableCell>
+                        <TableCell>{player.fgm}</TableCell>
+                        <TableCell>{player.fga}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            color={player.effectiveFgPct >= 55 ? "emerald" : "gray"}
+                            tooltip={getEfficiencyContext(player.effectiveFgPct, 'efg')}
+                          >
+                            {player.effectiveFgPct.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{player.threePm}</TableCell>
+                        <TableCell>{player.threePa}</TableCell>
+                        <TableCell>
+                          {((player.threePm / player.threePa) * 100).toFixed(1)}%
+                        </TableCell>
+                        <TableCell>{player.ftm}</TableCell>
+                        <TableCell>{player.fta}</TableCell>
+                        <TableCell>
+                          <Badge color={player.trueShootingPct >= 60 ? "emerald" : "gray"}>
+                            {player.trueShootingPct.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabPanel>
+
+              <TabPanel>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Player</TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('usageRate')}
+                      >
+                        USG%
+                        <StatTooltip 
+                          metric="Usage Rate"
+                          explanation={statExplanations.advanced.usg} 
+                        />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('assistPct')}
+                      >
+                        AST%
+                        <StatTooltip explanation={statExplanations.advanced.astPct} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('reboundPct')}
+                      >
+                        REB%
+                        <StatTooltip explanation={statExplanations.advanced.rebPct} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('trueShootingPct')}
+                      >
+                        TS%
+                        <StatTooltip explanation={statExplanations.advanced.tsPct} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('effectiveFgPct')}
+                      >
+                        eFG%
+                        <StatTooltip explanation={statExplanations.advanced.efgPct} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        AST/TO
+                        <StatTooltip explanation={statExplanations.advanced.astToRatio} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        PTS/Poss
+                        <StatTooltip explanation={statExplanations.advanced.ptsPerPoss} />
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortedPlayers.map((player) => (
+                      <TableRow 
+                        key={player.name}
+                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                        onClick={() => handlePlayerClick(player)}
+                      >
+                        <TableCell>{player.name}</TableCell>
+                        <TableCell>
+                          <Badge color={player.usageRate >= 25 ? "blue" : "gray"}>
+                            {player.usageRate.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{player.assistPct.toFixed(1)}%</TableCell>
+                        <TableCell>{player.reboundPct.toFixed(1)}%</TableCell>
+                        <TableCell>{player.trueShootingPct.toFixed(1)}%</TableCell>
+                        <TableCell>{player.effectiveFgPct.toFixed(1)}%</TableCell>
+                        <TableCell>
+                          {(player.assists / Math.max(player.turnovers, 1)).toFixed(1)}
+                        </TableCell>
+                        <TableCell>
+                          {(player.points / (player.fga + 0.44 * player.fta)).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabPanel>
+
+              <TabPanel>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Player</TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('offensiveRating')}
+                      >
+                        Off Rtg
+                        <StatTooltip 
+                          metric="Offensive Rating"
+                          explanation={statExplanations.impact.offRtg} 
+                        />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('defensiveRating')}
+                      >
+                        Def Rtg
+                        <StatTooltip explanation={statExplanations.impact.defRtg} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        Net Rtg
+                        <StatTooltip explanation={statExplanations.impact.netRtg} />
+                      </TableHeaderCell>
+                      <TableHeaderCell 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('plusMinus')}
+                      >
+                        +/-
+                        <StatTooltip explanation={statExplanations.impact.plusMinus} />
+                      </TableHeaderCell>
+                      <TableHeaderCell>
+                        Floor Impact
+                        <StatTooltip explanation={statExplanations.impact.floorImpact} />
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortedPlayers.map((player) => (
+                      <TableRow 
+                        key={player.name}
+                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                        onClick={() => handlePlayerClick(player)}
+                      >
+                        <TableCell>{player.name}</TableCell>
+                        <TableCell>
+                          <Badge color={player.offensiveRating >= 110 ? "emerald" : "gray"}>
+                            {player.offensiveRating.toFixed(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge color={player.defensiveRating <= 105 ? "emerald" : "gray"}>
+                            {player.defensiveRating.toFixed(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            color={(player.offensiveRating - player.defensiveRating) > 0 ? "emerald" : "red"}
+                          >
+                            {(player.offensiveRating - player.defensiveRating).toFixed(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge color={player.plusMinus > 0 ? "emerald" : "red"}>
+                            {player.plusMinus > 0 ? '+' : ''}{player.plusMinus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <ProgressBar
+                            value={(player.offensiveRating - 100) / 30}
+                            color={player.offensiveRating >= 110 ? "emerald" : "gray"}
+                            tooltip={`Impact Score: ${((player.offensiveRating - 100) / 30 * 100).toFixed(1)}
+                              ${getRatingContext(player.offensiveRating, 'offensive')}`}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabPanel>
+            </TabPanels>
+          </TabGroup>
+        </>
+      )}
     </Card>
   );
 } 
