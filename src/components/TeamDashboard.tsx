@@ -210,8 +210,8 @@ export default function TeamDashboard() {
   const otherTeamData = teamMetrics.find(t => t.team !== selectedTeam);
 
   return (
-    <main className="p-4 md:p-10 mx-auto max-w-[1600px] bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
-      <Card className="mb-8 dark:bg-gray-800">
+    <div className="space-y-6">
+      <Card className="dark:bg-gray-800">
         <Flex justifyContent="between" alignItems="center">
           <div>
             <Title className="text-3xl font-bold text-gray-800 dark:text-white">
@@ -737,6 +737,6 @@ export default function TeamDashboard() {
           <ArrowTrendingUpIcon className="h-6 w-6" />
         </Button>
       </div>
-    </main>
+    </div>
   );
 }
