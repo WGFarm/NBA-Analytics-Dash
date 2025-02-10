@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Card,
   Title,
@@ -20,8 +21,15 @@ import {
   Badge,
   Flex,
   Subtitle,
+  Legend,
+  Select,
+  SelectItem,
+  DateRangePicker,
+  DateRangePickerValue,
+  Button,
 } from "@tremor/react";
 import ThemeToggle from './ThemeToggle';
+import { InformationCircleIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline';
 
 interface TeamMetrics {
   team: string;
@@ -116,6 +124,36 @@ export default function TeamDashboard() {
     { metric: "Bench Points", value: 38, comparison: 32 },
   ];
 
+  // Properly typed state handlers
+  const [selectedTeam, setSelectedTeam] = useState<string>("Team A");
+  const [dateRange, setDateRange] = useState<DateRangePickerValue>({
+    from: new Date(2024, 0, 1),
+    to: new Date(),
+  });
+  const [selectedMetric, setSelectedMetric] = useState<string>("offensiveRating");
+
+  // Type-safe event handlers
+  const handleTeamChange = (value: string) => setSelectedTeam(value);
+  const handleMetricChange = (value: string) => setSelectedMetric(value);
+  const handleDateRangeChange = (value: DateRangePickerValue) => setDateRange(value);
+
+  // Helper function with proper types
+  const getTrendIndicator = (current: number, previous: number): JSX.Element => {
+    const percentChange = ((current - previous) / previous) * 100;
+    return (
+      <div className="flex items-center gap-1">
+        {percentChange > 0 ? (
+          <ArrowTrendingUpIcon className="h-4 w-4 text-emerald-500" />
+        ) : (
+          <ArrowTrendingDownIcon className="h-4 w-4 text-red-500" />
+        )}
+        <span className={percentChange > 0 ? "text-emerald-500" : "text-red-500"}>
+          {Math.abs(percentChange).toFixed(1)}%
+        </span>
+      </div>
+    );
+  };
+
   return (
     <main className="p-4 md:p-10 mx-auto max-w-[1600px] bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
       <Card className="mb-8 dark:bg-gray-800">
@@ -137,6 +175,35 @@ export default function TeamDashboard() {
         </Flex>
       </Card>
       
+      {/* Interactive controls with proper handlers */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Select
+          value={selectedTeam}
+          onValueChange={handleTeamChange}
+          className="dark:bg-gray-800"
+        >
+          <SelectItem value="Team A">Team A</SelectItem>
+          <SelectItem value="Team B">Team B</SelectItem>
+        </Select>
+
+        <DateRangePicker
+          value={dateRange}
+          onValueChange={handleDateRangeChange}
+          className="dark:bg-gray-800"
+          enableDropdown={false}
+        />
+
+        <Select
+          value={selectedMetric}
+          onValueChange={handleMetricChange}
+          className="dark:bg-gray-800"
+        >
+          <SelectItem value="offensiveRating">Offensive Rating</SelectItem>
+          <SelectItem value="defensiveRating">Defensive Rating</SelectItem>
+          <SelectItem value="efg">Effective FG%</SelectItem>
+        </Select>
+      </div>
+
       <TabGroup>
         <TabList className="mt-8 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm">
           <Tab className="px-6 py-3 text-sm dark:text-gray-300">Efficiency Metrics</Tab>
@@ -152,15 +219,19 @@ export default function TeamDashboard() {
               <Card 
                 decoration="top" 
                 decorationColor="blue" 
-                className="hover:shadow-lg transition-shadow dark:bg-gray-800"
+                className="hover:shadow-lg transition-shadow dark:bg-gray-800 group"
               >
-                <Flex alignItems="start">
+                <Flex alignItems="start" className="space-x-2">
                   <div>
                     <Title className="dark:text-white">Team Ratings</Title>
                     <Subtitle className="mt-2 dark:text-gray-400">
                       Offensive vs Defensive Efficiency
                     </Subtitle>
                   </div>
+                  <InformationCircleIcon 
+                    className="h-5 w-5 text-gray-500 dark:text-gray-400 cursor-help" 
+                    title="Points scored/allowed per 100 possessions"
+                  />
                 </Flex>
                 <BarChart
                   className="mt-6 h-64"
@@ -172,13 +243,19 @@ export default function TeamDashboard() {
                   showLegend={true}
                   showGridLines={false}
                 />
+                <Legend 
+                  className="mt-3"
+                  categories={["Offensive", "Defensive"]}
+                  colors={["emerald", "red"]}
+                />
               </Card>
 
               {/* Shooting Efficiency */}
               <Card 
                 decoration="top" 
                 decorationColor="emerald" 
-                className="hover:shadow-lg transition-shadow dark:bg-gray-800"
+                className="hover:shadow-lg transition-shadow dark:bg-gray-800 group cursor-pointer"
+                onClick={() => handleMetricChange("efg")}
               >
                 <Flex alignItems="start">
                   <div>
@@ -186,6 +263,9 @@ export default function TeamDashboard() {
                     <Subtitle className="mt-2 dark:text-gray-400">eFG% by Team</Subtitle>
                   </div>
                 </Flex>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-4 right-4 text-sm text-gray-500 dark:text-gray-400">
+                  Click to focus
+                </div>
                 <DonutChart
                   className="mt-6 h-64"
                   data={teamMetrics}
@@ -221,6 +301,10 @@ export default function TeamDashboard() {
                     color="indigo"
                     tooltip={`${teamMetrics[0].pace.toFixed(1)} possessions`}
                   />
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <Text className="dark:text-gray-400">vs Previous Week</Text>
+                  {getTrendIndicator(teamMetrics[0].pace, 97.5)}
                 </div>
               </Card>
             </Grid>
@@ -365,6 +449,20 @@ export default function TeamDashboard() {
           </TabPanel>
         </TabPanels>
       </TabGroup>
+
+      {/* Floating action button */}
+      <div className="fixed bottom-8 right-8">
+        <Button
+          size="lg"
+          variant="primary"
+          className="rounded-full shadow-lg hover:shadow-xl transition-shadow"
+          onClick={() => {
+            console.log("Quick action clicked");
+          }}
+        >
+          <ArrowTrendingUpIcon className="h-6 w-6" />
+        </Button>
+      </div>
     </main>
   );
 }
