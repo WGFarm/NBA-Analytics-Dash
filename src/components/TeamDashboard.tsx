@@ -27,10 +27,13 @@ import {
   DateRangePicker,
   DateRangePickerValue,
   Button,
+  ScatterChart,
+  BarList,
 } from "@tremor/react";
 import ThemeToggle from './ThemeToggle';
 import { InformationCircleIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline';
 import ComparisonIndicator from './ComparisonIndicator';
+import CustomRadarChart from './CustomRadarChart';
 
 interface TeamMetrics {
   team: string;
@@ -45,9 +48,9 @@ interface TeamMetrics {
 }
 
 interface ShotDistribution {
-  zone: string;
-  attempts: number;
-  efficiency: number;
+  category: string;
+  Warriors: number;
+  Lakers: number;
 }
 
 interface PerformanceTrend {
@@ -66,6 +69,27 @@ interface ClutchMetrics {
   metric: string;
   value: number;
   comparison: number;
+}
+
+interface HeadToHeadStats {
+  category: string;
+  teamA: number;
+  teamB: number;
+  isPercentage?: boolean;
+  isGoodWhenHigh?: boolean;
+}
+
+interface ShotHeatmapData {
+  x: number;
+  y: number;
+  value: number;
+}
+
+interface PlayerMatchupData {
+  player: string;
+  minutes: number;
+  points: number;
+  plusMinus: number;
 }
 
 export default function TeamDashboard() {
@@ -96,10 +120,11 @@ export default function TeamDashboard() {
   ];
 
   const shotDistribution: ShotDistribution[] = [
-    { zone: "Paint", attempts: 45, efficiency: 62 },
-    { zone: "Mid-Range", attempts: 20, efficiency: 42 },
-    { zone: "Corner 3", attempts: 15, efficiency: 38 },
-    { zone: "Top of Key 3", attempts: 20, efficiency: 35 },
+    { category: "Paint", Warriors: 45, Lakers: 48 },
+    { category: "Mid-Range", Warriors: 35, Lakers: 32 },
+    { category: "Corner 3", Warriors: 42, Lakers: 38 },
+    { category: "Top 3", Warriors: 38, Lakers: 35 },
+    { category: "Fast Break", Warriors: 40, Lakers: 45 },
   ];
 
   // New sample data for performance trends
@@ -123,6 +148,32 @@ export default function TeamDashboard() {
     { metric: "Second Chance", value: 14, comparison: 12 },
     { metric: "Fast Break", value: 18, comparison: 15 },
     { metric: "Bench Points", value: 38, comparison: 32 },
+  ];
+
+  const headToHeadStats: HeadToHeadStats[] = [
+    { category: "Points per Game", teamA: 115.2, teamB: 112.8, isGoodWhenHigh: true },
+    { category: "Win Percentage", teamA: 60, teamB: 40, isPercentage: true },
+    { category: "Field Goal %", teamA: 48.5, teamB: 46.2, isPercentage: true },
+    { category: "3PT %", teamA: 37.8, teamB: 35.6, isPercentage: true },
+    { category: "Free Throw %", teamA: 82.3, teamB: 79.8, isPercentage: true },
+    { category: "Rebounds", teamA: 45.2, teamB: 42.8 },
+    { category: "Assists", teamA: 26.5, teamB: 24.2 },
+    { category: "Steals", teamA: 8.2, teamB: 7.5 },
+    { category: "Blocks", teamA: 5.8, teamB: 4.9 },
+    { category: "Turnovers", teamA: 13.2, teamB: 14.8, isGoodWhenHigh: false },
+  ];
+
+  const shotHeatmapData: ShotHeatmapData[] = [
+    { x: 0, y: 0, value: 45 },
+    { x: 1, y: 1, value: 32 },
+    // ... more data points
+  ];
+
+  const playerMatchups: PlayerMatchupData[] = [
+    { player: "Player 1", minutes: 32, points: 24, plusMinus: 12 },
+    { player: "Player 2", minutes: 28, points: 18, plusMinus: -5 },
+    { player: "Player 3", minutes: 25, points: 15, plusMinus: 8 },
+    { player: "Player 4", minutes: 22, points: 12, plusMinus: 4 },
   ];
 
   // Properly typed state handlers
@@ -261,29 +312,30 @@ export default function TeamDashboard() {
 
               {/* Shooting Efficiency */}
               <Card 
-                decoration="top" 
-                decorationColor="emerald" 
-                className="hover:shadow-lg transition-shadow dark:bg-gray-800 group cursor-pointer"
-                onClick={() => handleMetricChange("efg")}
+                decoration="left" 
+                decorationColor="violet" 
+                className="hover:shadow-lg transition-shadow dark:bg-gray-800"
               >
                 <Flex alignItems="start">
                   <div>
-                    <Title className="dark:text-white">Shooting Efficiency</Title>
-                    <Subtitle className="mt-2 dark:text-gray-400">eFG% by Team</Subtitle>
+                    <Title className="dark:text-white">Shot Efficiency by Zone</Title>
+                    <Subtitle className="mt-2 dark:text-gray-400">FG% from different locations</Subtitle>
                   </div>
                 </Flex>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-4 right-4 text-sm text-gray-500 dark:text-gray-400">
-                  Click to focus
-                </div>
-                <DonutChart
-                  className="mt-6 h-64"
-                  data={teamMetrics}
-                  category="efg"
-                  index="team"
-                  valueFormatter={(value) => `${value.toFixed(1)}%`}
-                  colors={["blue", "cyan"]}
-                  showAnimation={true}
-                  showTooltip={true}
+                <BarChart
+                  className="mt-6 h-80"
+                  data={[
+                    { zone: "Paint", Warriors: 62, Lakers: 58 },
+                    { zone: "Mid-Range", Warriors: 42, Lakers: 40 },
+                    { zone: "Corner 3", Warriors: 38, Lakers: 35 },
+                    { zone: "Top 3", Warriors: 35, Lakers: 33 },
+                    { zone: "Fast Break", Warriors: 65, Lakers: 62 },
+                  ]}
+                  index="zone"
+                  categories={["Warriors", "Lakers"]}
+                  colors={["blue", "red"]}
+                  valueFormatter={(value) => `${value}%`}
+                  showLegend={true}
                 />
               </Card>
 
@@ -436,47 +488,107 @@ export default function TeamDashboard() {
                 </Grid>
               </Card>
 
-              {/* Head-to-Head Performance */}
-              <Card className="dark:bg-gray-800">
-                <Title className="dark:text-white">Head-to-Head Performance</Title>
+              {/* Enhanced Head-to-Head Performance */}
+              <Card className="col-span-3 dark:bg-gray-800">
+                <Flex>
+                  <Title className="dark:text-white">Head-to-Head Performance</Title>
+                  <Badge className="ml-2 dark:bg-gray-700">Last 5 Games</Badge>
+                </Flex>
+                
                 <Grid numItems={2} className="gap-6 mt-4">
-                  <div>
-                    <Text className="dark:text-gray-400">Points per Game</Text>
-                    <div className="flex items-center justify-between mt-2">
-                      <div>
-                        <Text className="dark:text-gray-300">{selectedTeam}</Text>
-                        <Metric className="text-2xl text-blue-600 dark:text-blue-400">115.2</Metric>
-                      </div>
-                      <div className="text-right">
-                        <Text className="dark:text-gray-300">{otherTeamData?.team}</Text>
-                        <Metric className="text-2xl text-red-600 dark:text-red-400">112.8</Metric>
-                      </div>
+                  {/* Main Stats Comparison */}
+                  <Card className="dark:bg-gray-700">
+                    <div className="space-y-4">
+                      {headToHeadStats.slice(0, 5).map((stat) => (
+                        <div key={stat.category}>
+                          <Flex className="mb-2">
+                            <Text className="dark:text-gray-300">{stat.category}</Text>
+                            <ComparisonIndicator
+                              value={stat.teamA}
+                              comparisonValue={stat.teamB}
+                              formatValue={(v) => stat.isPercentage ? `${v.toFixed(1)}%` : v.toFixed(1)}
+                              isGoodWhenHigh={stat.isGoodWhenHigh !== false}
+                            />
+                          </Flex>
+                          <ProgressBar
+                            value={stat.teamA / (stat.teamA + stat.teamB)}
+                            className="mt-1"
+                            tooltip={`${selectedTeam}: ${stat.teamA} vs ${otherTeamData?.team}: ${stat.teamB}`}
+                            color="blue"
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <ProgressBar 
-                      value={115.2 / (115.2 + 112.8)} 
-                      className="mt-2"
-                      tooltip="Head-to-head scoring comparison"
-                    />
-                  </div>
-                  <div>
-                    <Text className="dark:text-gray-400">Win Percentage</Text>
-                    <div className="flex items-center justify-between mt-2">
-                      <div>
-                        <Text className="dark:text-gray-300">{selectedTeam}</Text>
-                        <Metric className="text-2xl text-blue-600 dark:text-blue-400">60%</Metric>
-                      </div>
-                      <div className="text-right">
-                        <Text className="dark:text-gray-300">{otherTeamData?.team}</Text>
-                        <Metric className="text-2xl text-red-600 dark:text-red-400">40%</Metric>
-                      </div>
-                    </div>
-                    <ProgressBar 
-                      value={0.6} 
-                      className="mt-2"
-                      tooltip="Head-to-head win percentage"
-                    />
-                  </div>
+                  </Card>
+
+                  {/* Additional Stats Grid */}
+                  <Card className="dark:bg-gray-700">
+                    <Grid numItems={2} className="gap-4">
+                      {headToHeadStats.slice(5).map((stat) => (
+                        <div key={stat.category} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                          <Text className="dark:text-gray-400">{stat.category}</Text>
+                          <div className="flex items-center justify-between mt-2">
+                            <div>
+                              <Text className="dark:text-gray-300">{selectedTeam}</Text>
+                              <Metric className="text-lg text-blue-600 dark:text-blue-400">
+                                {stat.teamA.toFixed(1)}
+                              </Metric>
+                            </div>
+                            <div className="text-right">
+                              <Text className="dark:text-gray-300">{otherTeamData?.team}</Text>
+                              <Metric className="text-lg text-red-600 dark:text-red-400">
+                                {stat.teamB.toFixed(1)}
+                              </Metric>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </Grid>
+                  </Card>
                 </Grid>
+
+                {/* Recent Games Timeline */}
+                <Card className="mt-4 dark:bg-gray-700">
+                  <Title className="dark:text-white text-sm">Recent Matchups</Title>
+                  <div className="flex justify-between items-center mt-4">
+                    {[
+                      { date: "Jan 15", scoreA: 112, scoreB: 108 },
+                      { date: "Dec 28", scoreA: 105, scoreB: 115 },
+                      { date: "Dec 12", scoreA: 118, scoreB: 110 },
+                      { date: "Nov 30", scoreA: 108, scoreB: 106 },
+                      { date: "Nov 15", scoreA: 122, scoreB: 115 },
+                    ].map((game, idx) => (
+                      <div key={idx} className="text-center">
+                        <Text className="dark:text-gray-400 text-xs">{game.date}</Text>
+                        <div className={`text-sm font-semibold ${
+                          game.scoreA > game.scoreB ? 'text-emerald-500' : 'text-red-500'
+                        }`}>
+                          {game.scoreA} - {game.scoreB}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Scoring Trends */}
+                <Card className="mt-4 dark:bg-gray-700">
+                  <Title className="dark:text-white text-sm">Scoring Distribution by Quarter</Title>
+                  <AreaChart
+                    className="mt-4 h-32"
+                    data={[
+                      { quarter: "Q1", teamA: 28, teamB: 24 },
+                      { quarter: "Q2", teamA: 30, teamB: 28 },
+                      { quarter: "Q3", teamA: 25, teamB: 32 },
+                      { quarter: "Q4", teamA: 32, teamB: 26 },
+                    ]}
+                    index="quarter"
+                    categories={["teamA", "teamB"]}
+                    colors={["blue", "red"]}
+                    valueFormatter={(value) => `${value} pts`}
+                    showLegend={false}
+                    showGridLines={false}
+                  />
+                </Card>
               </Card>
             </Grid>
           </TabPanel>
@@ -485,43 +597,12 @@ export default function TeamDashboard() {
             <Grid numItems={1} numItemsSm={2} className="gap-6 mt-6">
               {/* Shot Distribution */}
               <Card className="dark:bg-gray-800">
-                <Title className="dark:text-white">Shot Distribution Comparison</Title>
-                <Grid numItems={2} className="gap-4 mt-4">
-                  <div>
-                    <Subtitle className="dark:text-gray-400">{selectedTeam}</Subtitle>
-                    <DonutChart
-                      className="mt-2"
-                      data={shotDistribution}
-                      category="attempts"
-                      index="zone"
-                      valueFormatter={(value) => `${value}%`}
-                      colors={["blue", "cyan", "indigo", "violet"]}
-                    />
-                  </div>
-                  <div>
-                    <Subtitle className="dark:text-gray-400">{otherTeamData?.team}</Subtitle>
-                    <DonutChart
-                      className="mt-2"
-                      data={shotDistribution}
-                      category="attempts"
-                      index="zone"
-                      valueFormatter={(value) => `${value}%`}
-                      colors={["blue", "cyan", "indigo", "violet"]}
-                    />
-                  </div>
-                </Grid>
-                <div className="mt-4">
-                  {shotDistribution.map((zone) => (
-                    <div key={zone.zone} className="mt-2">
-                      <ComparisonIndicator
-                        value={zone.efficiency}
-                        comparisonValue={zone.efficiency * 0.9} // Example comparison
-                        label={zone.zone}
-                        formatValue={(v) => `${v.toFixed(1)}%`}
-                      />
-                    </div>
-                  ))}
-                </div>
+                <Title className="dark:text-white">Shot Distribution</Title>
+                <Subtitle className="mt-2 dark:text-gray-400">
+                  Shot frequency by zone comparison
+                </Subtitle>
+                
+                <CustomRadarChart data={shotDistribution} />
               </Card>
 
               {/* Shot Efficiency */}
@@ -538,13 +619,18 @@ export default function TeamDashboard() {
                 </Flex>
                 <BarChart
                   className="mt-6 h-80"
-                  data={shotDistribution}
+                  data={[
+                    { zone: "Paint", Warriors: 62, Lakers: 58 },
+                    { zone: "Mid-Range", Warriors: 42, Lakers: 40 },
+                    { zone: "Corner 3", Warriors: 38, Lakers: 35 },
+                    { zone: "Top 3", Warriors: 35, Lakers: 33 },
+                    { zone: "Fast Break", Warriors: 65, Lakers: 62 },
+                  ]}
                   index="zone"
-                  categories={["efficiency"]}
-                  colors={["violet"]}
+                  categories={["Warriors", "Lakers"]}
+                  colors={["blue", "red"]}
                   valueFormatter={(value) => `${value}%`}
-                  showLegend={false}
-                  showGridLines={false}
+                  showLegend={true}
                 />
               </Card>
             </Grid>
