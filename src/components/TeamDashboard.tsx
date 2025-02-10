@@ -30,6 +30,7 @@ import {
 } from "@tremor/react";
 import ThemeToggle from './ThemeToggle';
 import { InformationCircleIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline';
+import ComparisonIndicator from './ComparisonIndicator';
 
 interface TeamMetrics {
   team: string;
@@ -154,6 +155,9 @@ export default function TeamDashboard() {
     );
   };
 
+  const selectedTeamData = teamMetrics.find(t => t.team === selectedTeam);
+  const otherTeamData = teamMetrics.find(t => t.team !== selectedTeam);
+
   return (
     <main className="p-4 md:p-10 mx-auto max-w-[1600px] bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
       <Card className="mb-8 dark:bg-gray-800">
@@ -190,7 +194,6 @@ export default function TeamDashboard() {
           value={dateRange}
           onValueChange={handleDateRangeChange}
           className="dark:bg-gray-800"
-          enableDropdown={false}
         />
 
         <Select
@@ -219,34 +222,40 @@ export default function TeamDashboard() {
               <Card 
                 decoration="top" 
                 decorationColor="blue" 
-                className="hover:shadow-lg transition-shadow dark:bg-gray-800 group"
+                className="hover:shadow-lg transition-shadow dark:bg-gray-800"
               >
                 <Flex alignItems="start" className="space-x-2">
                   <div>
-                    <Title className="dark:text-white">Team Ratings</Title>
+                    <Title className="dark:text-white">Offensive Rating</Title>
                     <Subtitle className="mt-2 dark:text-gray-400">
-                      Offensive vs Defensive Efficiency
+                      Points per 100 possessions
                     </Subtitle>
                   </div>
                   <InformationCircleIcon 
                     className="h-5 w-5 text-gray-500 dark:text-gray-400 cursor-help" 
-                    title="Points scored/allowed per 100 possessions"
+                    title="Points scored per 100 possessions"
                   />
                 </Flex>
+                <div className="mt-6">
+                  <Metric className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                    {selectedTeamData?.offensiveRating.toFixed(1)}
+                  </Metric>
+                  <div className="mt-4">
+                    <ComparisonIndicator
+                      value={selectedTeamData?.offensiveRating || 0}
+                      comparisonValue={otherTeamData?.offensiveRating || 0}
+                      label={`vs ${otherTeamData?.team}`}
+                    />
+                  </div>
+                </div>
                 <BarChart
-                  className="mt-6 h-64"
+                  className="mt-6 h-48"
                   data={teamMetrics}
                   index="team"
-                  categories={["offensiveRating", "defensiveRating"]}
-                  colors={["emerald", "red"]}
+                  categories={["offensiveRating"]}
+                  colors={["blue"]}
                   valueFormatter={(value) => `${value.toFixed(1)}`}
-                  showLegend={true}
-                  showGridLines={false}
-                />
-                <Legend 
-                  className="mt-3"
-                  categories={["Offensive", "Defensive"]}
-                  colors={["emerald", "red"]}
+                  showLegend={false}
                 />
               </Card>
 
@@ -307,33 +316,212 @@ export default function TeamDashboard() {
                   {getTrendIndicator(teamMetrics[0].pace, 97.5)}
                 </div>
               </Card>
+
+              {/* Defensive Rating Comparison */}
+              <Card 
+                decoration="top" 
+                decorationColor="red" 
+                className="hover:shadow-lg transition-shadow dark:bg-gray-800"
+              >
+                <Flex alignItems="start" className="space-x-2">
+                  <div>
+                    <Title className="dark:text-white">Defensive Rating</Title>
+                    <Subtitle className="mt-2 dark:text-gray-400">
+                      Points allowed per 100 possessions
+                    </Subtitle>
+                  </div>
+                  <InformationCircleIcon 
+                    className="h-5 w-5 text-gray-500 dark:text-gray-400 cursor-help" 
+                    title="Lower is better"
+                  />
+                </Flex>
+                <div className="mt-6">
+                  <Metric className="text-4xl font-bold text-red-600 dark:text-red-400">
+                    {selectedTeamData?.defensiveRating.toFixed(1)}
+                  </Metric>
+                  <div className="mt-4">
+                    <ComparisonIndicator
+                      value={selectedTeamData?.defensiveRating || 0}
+                      comparisonValue={otherTeamData?.defensiveRating || 0}
+                      label={`vs ${otherTeamData?.team}`}
+                      isGoodWhenHigh={false}
+                    />
+                  </div>
+                </div>
+                <BarChart
+                  className="mt-6 h-48"
+                  data={teamMetrics}
+                  index="team"
+                  categories={["defensiveRating"]}
+                  colors={["red"]}
+                  valueFormatter={(value) => `${value.toFixed(1)}`}
+                  showLegend={false}
+                />
+              </Card>
+
+              {/* True Shooting Comparison */}
+              <Card 
+                decoration="top" 
+                decorationColor="emerald" 
+                className="hover:shadow-lg transition-shadow dark:bg-gray-800"
+              >
+                <Flex alignItems="start" className="space-x-2">
+                  <div>
+                    <Title className="dark:text-white">True Shooting</Title>
+                    <Subtitle className="mt-2 dark:text-gray-400">
+                      Shooting efficiency including FTs
+                    </Subtitle>
+                  </div>
+                </Flex>
+                <Grid numItems={2} className="gap-4 mt-6">
+                  <div>
+                    <Text className="dark:text-gray-400">{selectedTeam}</Text>
+                    <Metric className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {selectedTeamData?.trueShootingPct.toFixed(1)}%
+                    </Metric>
+                  </div>
+                  <div>
+                    <Text className="dark:text-gray-400">{otherTeamData?.team}</Text>
+                    <Metric className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                      {otherTeamData?.trueShootingPct.toFixed(1)}%
+                    </Metric>
+                  </div>
+                </Grid>
+                <ComparisonIndicator
+                  value={selectedTeamData?.trueShootingPct || 0}
+                  comparisonValue={otherTeamData?.trueShootingPct || 0}
+                  label="Difference"
+                  formatValue={(v) => `${v.toFixed(1)}%`}
+                />
+              </Card>
+
+              {/* Team Success Rates Comparison */}
+              <Card className="col-span-3 dark:bg-gray-800">
+                <Title className="dark:text-white">Team Success Metrics Comparison</Title>
+                <Grid numItems={3} className="gap-4 mt-4">
+                  <Card decoration="top" decorationColor="emerald" className="dark:bg-gray-700">
+                    <Text className="dark:text-gray-300">Assist Rate</Text>
+                    <div className="mt-2">
+                      <Metric className="dark:text-white">{selectedTeamData?.assistRate}%</Metric>
+                      <ComparisonIndicator
+                        value={selectedTeamData?.assistRate || 0}
+                        comparisonValue={otherTeamData?.assistRate || 0}
+                        formatValue={(v) => `${v.toFixed(1)}%`}
+                      />
+                    </div>
+                  </Card>
+                  <Card decoration="top" decorationColor="blue" className="dark:bg-gray-700">
+                    <Text className="dark:text-gray-300">Rebound Rate</Text>
+                    <div className="mt-2">
+                      <Metric className="dark:text-white">{selectedTeamData?.reboundRate}%</Metric>
+                      <ComparisonIndicator
+                        value={selectedTeamData?.reboundRate || 0}
+                        comparisonValue={otherTeamData?.reboundRate || 0}
+                        formatValue={(v) => `${v.toFixed(1)}%`}
+                      />
+                    </div>
+                  </Card>
+                  <Card decoration="top" decorationColor="red" className="dark:bg-gray-700">
+                    <Text className="dark:text-gray-300">Turnover Rate</Text>
+                    <div className="mt-2">
+                      <Metric className="dark:text-white">{selectedTeamData?.turnoverRate}%</Metric>
+                      <ComparisonIndicator
+                        value={selectedTeamData?.turnoverRate || 0}
+                        comparisonValue={otherTeamData?.turnoverRate || 0}
+                        isGoodWhenHigh={false}
+                        formatValue={(v) => `${v.toFixed(1)}%`}
+                      />
+                    </div>
+                  </Card>
+                </Grid>
+              </Card>
+
+              {/* Head-to-Head Performance */}
+              <Card className="dark:bg-gray-800">
+                <Title className="dark:text-white">Head-to-Head Performance</Title>
+                <Grid numItems={2} className="gap-6 mt-4">
+                  <div>
+                    <Text className="dark:text-gray-400">Points per Game</Text>
+                    <div className="flex items-center justify-between mt-2">
+                      <div>
+                        <Text className="dark:text-gray-300">{selectedTeam}</Text>
+                        <Metric className="text-2xl text-blue-600 dark:text-blue-400">115.2</Metric>
+                      </div>
+                      <div className="text-right">
+                        <Text className="dark:text-gray-300">{otherTeamData?.team}</Text>
+                        <Metric className="text-2xl text-red-600 dark:text-red-400">112.8</Metric>
+                      </div>
+                    </div>
+                    <ProgressBar 
+                      value={115.2 / (115.2 + 112.8)} 
+                      className="mt-2"
+                      tooltip="Head-to-head scoring comparison"
+                    />
+                  </div>
+                  <div>
+                    <Text className="dark:text-gray-400">Win Percentage</Text>
+                    <div className="flex items-center justify-between mt-2">
+                      <div>
+                        <Text className="dark:text-gray-300">{selectedTeam}</Text>
+                        <Metric className="text-2xl text-blue-600 dark:text-blue-400">60%</Metric>
+                      </div>
+                      <div className="text-right">
+                        <Text className="dark:text-gray-300">{otherTeamData?.team}</Text>
+                        <Metric className="text-2xl text-red-600 dark:text-red-400">40%</Metric>
+                      </div>
+                    </div>
+                    <ProgressBar 
+                      value={0.6} 
+                      className="mt-2"
+                      tooltip="Head-to-head win percentage"
+                    />
+                  </div>
+                </Grid>
+              </Card>
             </Grid>
           </TabPanel>
 
           <TabPanel>
             <Grid numItems={1} numItemsSm={2} className="gap-6 mt-6">
               {/* Shot Distribution */}
-              <Card 
-                decoration="left" 
-                decorationColor="cyan" 
-                className="hover:shadow-lg transition-shadow dark:bg-gray-800"
-              >
-                <Flex alignItems="start">
+              <Card className="dark:bg-gray-800">
+                <Title className="dark:text-white">Shot Distribution Comparison</Title>
+                <Grid numItems={2} className="gap-4 mt-4">
                   <div>
-                    <Title className="dark:text-white">Shot Distribution by Zone</Title>
-                    <Subtitle className="mt-2 dark:text-gray-400">Percentage of attempts by location</Subtitle>
+                    <Subtitle className="dark:text-gray-400">{selectedTeam}</Subtitle>
+                    <DonutChart
+                      className="mt-2"
+                      data={shotDistribution}
+                      category="attempts"
+                      index="zone"
+                      valueFormatter={(value) => `${value}%`}
+                      colors={["blue", "cyan", "indigo", "violet"]}
+                    />
                   </div>
-                </Flex>
-                <DonutChart
-                  className="mt-6 h-80"
-                  data={shotDistribution}
-                  category="attempts"
-                  index="zone"
-                  valueFormatter={(value) => `${value}%`}
-                  colors={["blue", "cyan", "indigo", "violet"]}
-                  showAnimation={true}
-                  showTooltip={true}
-                />
+                  <div>
+                    <Subtitle className="dark:text-gray-400">{otherTeamData?.team}</Subtitle>
+                    <DonutChart
+                      className="mt-2"
+                      data={shotDistribution}
+                      category="attempts"
+                      index="zone"
+                      valueFormatter={(value) => `${value}%`}
+                      colors={["blue", "cyan", "indigo", "violet"]}
+                    />
+                  </div>
+                </Grid>
+                <div className="mt-4">
+                  {shotDistribution.map((zone) => (
+                    <div key={zone.zone} className="mt-2">
+                      <ComparisonIndicator
+                        value={zone.efficiency}
+                        comparisonValue={zone.efficiency * 0.9} // Example comparison
+                        label={zone.zone}
+                        formatValue={(v) => `${v.toFixed(1)}%`}
+                      />
+                    </div>
+                  ))}
+                </div>
               </Card>
 
               {/* Shot Efficiency */}
